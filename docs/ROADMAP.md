@@ -13,7 +13,8 @@ All plans are provisional. No release date is promised.
 
 ## Milestone 0.1: Bootable developer prototype
 - [ ] Choose supported Fedora base and image building approach
-- [ ] Produce deterministic build inputs and publish build instructions
+- [x] Create and successfully build a minimal Fedora bootc development container (GitHub Actions run 39868620806; 14 lint checks passed, 1 skipped)
+- [ ] Pin and document reviewed upstream digests and reproducible build inputs
 - [ ] Boot the image in a disposable VM
 - [ ] Launch KDE Plasma with familiar desktop defaults
 - [ ] Verify basic networking, display, storage, audio, and updates
