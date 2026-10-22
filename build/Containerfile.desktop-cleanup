@@ -1,0 +1,27 @@
+# EXPERIMENT ONLY — Crelovia KDE Plasma package composition
+# Does not replace the known-good build/Containerfile.
+# No display manager, VM login, or booted desktop has been verified.
+FROM quay.io/fedora/fedora-bootc:43
+
+LABEL org.opencontainers.image.title="Crelovia OS KDE desktop experiment" \
+      org.opencontainers.image.description="Unreleased Fedora bootc KDE packaging experiment" \
+      org.opencontainers.image.source="https://github.com/crelovia/crelovia-os"
+
+COPY build/crelovia-release-info /usr/share/crelovia/release-info
+
+# Start with the Fedora KDE desktop group. This selection is experimental:
+# build logs will tell us whether all dependencies resolve against Fedora 43.
+RUN dnf -y group install kde-desktop-environment && dnf clean all
+
+# Remove only known transient DNF build logs/runtime cache; do not blindly wipe /var.
+RUN rm -f /var/log/dnf5.log /var/log/dnf5.log.[0-9]* && \
+    rm -rf /run/dnf && \
+    dnf clean all
+
+# Check a few essential pieces without presuming which login manager Fedora supplies.
+RUN rpm -q plasma-desktop plasma-workspace kwin && \
+    test -f /usr/share/wayland-sessions/plasma.desktop && \
+    bootc container lint
+
+# Deliberately no enabled display manager yet; VM image generation
+# and first-boot account provisioning require separate testing.
