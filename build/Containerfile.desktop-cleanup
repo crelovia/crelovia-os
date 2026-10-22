@@ -14,9 +14,9 @@ COPY build/crelovia-release-info /usr/share/crelovia/release-info
 RUN dnf -y group install kde-desktop-environment && dnf clean all
 
 # Remove only known transient DNF build logs/runtime cache; do not blindly wipe /var.
-RUN rm -f /var/log/dnf5.log /var/log/dnf5.log.[0-9]* && \
-    rm -rf /run/dnf && \
-    dnf clean all
+RUN dnf clean all && \
+    rm -f /var/log/dnf5.log /var/log/dnf5.log.[0-9]* && \
+    rm -rf /run/dnf
 
 # Check a few essential pieces without presuming which login manager Fedora supplies.
 RUN rpm -q plasma-desktop plasma-workspace kwin && \
