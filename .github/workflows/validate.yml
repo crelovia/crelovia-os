@@ -1,0 +1,28 @@
+name: Validate source
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Validate initial build metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f build/Containerfile
+          test -f build/crelovia-release-info
+          grep -Fxq 'FROM quay.io/fedora/fedora-bootc:43' build/Containerfile
+          grep -Fxq 'STAGE=experimental' build/crelovia-release-info
+          grep -Fq 'RUN bootc container lint' build/Containerfile
+          test -f SECURITY.md
+          test -f docs/ARCHITECTURE.md
+          echo 'Crelovia source validation passed (static checks only).'
