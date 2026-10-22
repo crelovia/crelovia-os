@@ -52,3 +52,15 @@ Investigate the upstream-recommended bootc cleanup/reset approach for generated 
 - During package scripts, audit log connection errors were printed as ignored; they did not cause a failed build. Assess whether any affect the eventual booted environment.
 
 Next: make DNF log cleanup last, inventory runtime and persistent state, and validate safe tmpfiles policy before proceeding to VM conversion.
+
+## Cleanup experiment #3 — 2026-10-22
+
+Run: https://github.com/crelovia/crelovia-os/actions/runs/39873678620
+
+- Result: success; 12 lint checks passed, 1 skipped, **2 warnings**.
+- Reordering DNF cleanup so log files are removed **after** `dnf clean all` eliminated the `var-log` warning.
+- Remaining: `nonempty-run-tmp` and `var-tmpfiles`.
+- The `var-tmpfiles` diagnostic includes ~60 directory entries and additional non-directory files in `/var`. This is not permission to delete all of them. Identify upstream-owned state versus ephemeral build residue, and preserve first-boot initialization semantics.
+- No bootable disk image or graphical login has been demonstrated yet.
+
+**Next decision gate:** Inventory complete paths, ownership, and existing tmpfiles rules in a diagnostic workflow. Avoid broad deletions and do not suppress lint warnings merely to obtain a green status.
