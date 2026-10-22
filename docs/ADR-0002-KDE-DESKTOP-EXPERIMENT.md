@@ -39,3 +39,16 @@ Note: Fedora package sets can change. The preliminary experiment uses Fedora 43 
 ## Next gate
 
 Investigate the upstream-recommended bootc cleanup/reset approach for generated runtime and /var state. Verify that cleanup preserves mandatory systemd and package-owned initialization behavior; do not indiscriminately delete persistent directories. Re-run lint and require zero unexplained warnings before VM disk conversion.
+
+
+## Cleanup experiment results — 2026-10-22
+
+- Run: https://github.com/crelovia/crelovia-os/actions/runs/39872665099
+- Result: build/diagnostics jobs succeeded, but bootc lint **still reported 3 warnings** (11 checks passed, 1 skipped).
+- `nonempty-run-tmp` persisted with /run/cups, /run/hplip, /run/lock and other runtime directories. /run/dnf no longer appeared in the displayed sample.
+- `var-log` improved from multiple DNF logs to one /var/log/dnf5.log. Suspected cause: `dnf clean all` runs *after* log removal and may recreate it; verify by changing cleanup ordering in another experiment.
+- `var-tmpfiles` still reports ~60 candidate /var directories and non-directory /var files lacking appropriate tmpfiles declarations. These require categorized review, not blanket deletion.
+- The workflow reports success even with bootc lint warnings; do not interpret it as release readiness.
+- During package scripts, audit log connection errors were printed as ignored; they did not cause a failed build. Assess whether any affect the eventual booted environment.
+
+Next: make DNF log cleanup last, inventory runtime and persistent state, and validate safe tmpfiles policy before proceeding to VM conversion.
