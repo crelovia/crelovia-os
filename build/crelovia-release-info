@@ -1,0 +1,4 @@
+PROJECT=Crelovia OS
+STAGE=experimental
+BASE=Fedora bootc 43
+STATUS=No installable or supported Crelovia OS release exists
