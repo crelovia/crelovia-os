@@ -1,0 +1,13 @@
+# Crelovia OS exploratory bootc build
+# Fedora 43 is explicit to avoid silently adopting a new Fedora release.
+# IMPORTANT: this is NOT yet a KDE desktop, a distributable ISO, or a release.
+# For reproducible releases, replace the tag with a vetted immutable digest.
+FROM quay.io/fedora/fedora-bootc:43
+
+LABEL org.opencontainers.image.title="Crelovia OS development base" \
+      org.opencontainers.image.description="Experimental bootc base; not a release or complete desktop" \
+      org.opencontainers.image.source="https://github.com/crelovia/crelovia-os" \
+      org.opencontainers.image.licenses="NOASSERTION"
+
+COPY build/crelovia-release-info /usr/share/crelovia/release-info
+RUN bootc container lint
