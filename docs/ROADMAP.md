@@ -16,6 +16,8 @@ All plans are provisional. No release date is promised.
 - [x] Create and successfully build a minimal Fedora bootc development container (GitHub Actions run 39868620806; 14 lint checks passed, 1 skipped)
 - [ ] Pin and document reviewed upstream digests and reproducible build inputs
 - [ ] Boot the image in a disposable VM
+- [x] Build an experimental Fedora 43 bootc container containing KDE Plasma 6.7.5 and KWin (run 39869732108; packaging verified, not boot-tested)
+- [ ] Resolve KDE image bootc lint warnings for runtime/tmp files, DNF logs, and /var initialization
 - [ ] Launch KDE Plasma with familiar desktop defaults
 - [ ] Verify basic networking, display, storage, audio, and updates
 - [ ] Document rollback/recovery design and prove it in a VM
