@@ -32,4 +32,7 @@ jobs:
           echo "::group::Relevant tmpfiles entries"
           podman run --rm localhost/crelovia-kde-cleanup:dev sh -c 'find /usr/lib/tmpfiles.d /etc/tmpfiles.d -maxdepth 1 -type f 2>/dev/null | sort | head -80'
           echo "::endgroup::"
+          echo "::group::Read-only state inventory"
+          podman run --rm --mount "type=bind,src=${{ github.workspace }}/build/diagnose-state.sh,dst=/tmp/diagnose-state.sh,ro" localhost/crelovia-kde-cleanup:dev bash /tmp/diagnose-state.sh
+          echo "::endgroup::"
       # Intentionally does not upload artifacts, install disks, or publish images.
