@@ -1,0 +1,28 @@
+name: Experimental KDE container build
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-kde:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install Podman
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y podman
+      - name: Build KDE development container (not an ISO)
+        run: |
+          podman build --file build/Containerfile.desktop --tag localhost/crelovia-kde:dev .
+      - name: Verify desktop packages and image identity
+        run: |
+          podman image inspect localhost/crelovia-kde:dev --format '{{.Id}}'
+          podman run --rm localhost/crelovia-kde:dev rpm -q plasma-desktop plasma-workspace kwin
+      # No release, registry push, installer, privileged host disk access, or artifacts.
