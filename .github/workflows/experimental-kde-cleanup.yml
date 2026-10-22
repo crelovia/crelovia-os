@@ -1,0 +1,35 @@
+name: Experimental KDE cleanup diagnostics
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install Podman
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y podman
+      - name: Build diagnostic image
+        run: |
+          podman build --file build/Containerfile.desktop-cleanup --tag localhost/crelovia-kde-cleanup:dev .
+      - name: Run diagnostics
+        run: |
+          echo "::group::Image identity"
+          podman image inspect localhost/crelovia-kde-cleanup:dev --format '{{.Id}}'
+          echo "::endgroup::"
+          echo "::group::bootc lint"
+          podman run --rm localhost/crelovia-kde-cleanup:dev bootc container lint
+          echo "::endgroup::"
+          echo "::group::Relevant tmpfiles entries"
+          podman run --rm localhost/crelovia-kde-cleanup:dev sh -c 'find /usr/lib/tmpfiles.d /etc/tmpfiles.d -maxdepth 1 -type f 2>/dev/null | sort | head -80'
+          echo "::endgroup::"
+      # Intentionally does not upload artifacts, install disks, or publish images.
