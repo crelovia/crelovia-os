@@ -1,0 +1,25 @@
+name: Experimental bootc container build
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Podman
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y podman
+      - name: Build disposable bootc development base
+        run: |
+          podman build --file build/Containerfile --tag localhost/crelovia-base:dev .
+      - name: Inspect image metadata
+        run: |
+          podman image inspect localhost/crelovia-base:dev --format '{{.Id}}'
+      # Deliberately no push, package upload, ISO generation, or release publication.
