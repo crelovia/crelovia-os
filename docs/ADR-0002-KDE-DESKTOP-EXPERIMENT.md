@@ -22,3 +22,20 @@ This confirms only dependency resolution and container image assembly, NOT wheth
 - https://fedoraproject.org/wiki/KDE
 
 Note: Fedora package sets can change. The preliminary experiment uses Fedora 43 explicitly and does not lock full dependency digests.
+
+
+## Experiment #1 results — 2026-10-22
+
+- GitHub Actions run: https://github.com/crelovia/crelovia-os/actions/runs/39869732108
+- Conclusion: success; duration 5m48s.
+- Package validation: plasma-desktop 6.7.5-1.fc43, plasma-workspace 6.7.5-1.fc43, kwin 6.7.5-1.fc43, x86_64.
+- Wayland Plasma session existence test passed.
+- bootc lint: 11 passed, 1 skipped, **3 warnings**:
+  1. `nonempty-run-tmp`: runtime paths under /run and /tmp (e.g. /run/cups and /run/dnf).
+  2. `var-log`: DNF5 logs remained in /var/log.
+  3. `var-tmpfiles`: generated /var state, including PackageKit caches and systemd-related data, without corresponding tmpfiles.d initialization rules.
+- Important: a successful exit code does not imply an image free of warnings, a functioning display manager, or a bootable workstation.
+
+## Next gate
+
+Investigate the upstream-recommended bootc cleanup/reset approach for generated runtime and /var state. Verify that cleanup preserves mandatory systemd and package-owned initialization behavior; do not indiscriminately delete persistent directories. Re-run lint and require zero unexplained warnings before VM disk conversion.
