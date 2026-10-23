@@ -1,0 +1,30 @@
+name: Experimental KDE runtime cleanup
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  runtime-cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install Podman
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y podman
+      - name: Build runtime-cleanup experiment
+        run: |
+          podman build --file build/Containerfile.desktop-runtime --tag localhost/crelovia-kde-runtime:dev .
+      - name: Verify packages and lint inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          podman run --rm localhost/crelovia-kde-runtime:dev rpm -q plasma-desktop plasma-workspace kwin
+          podman run --rm localhost/crelovia-kde-runtime:dev bootc container lint
+          echo 'No image published. This workflow checks packaging only, not VM boot.'
