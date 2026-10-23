@@ -45,3 +45,21 @@ An actionable report distinguishing **present**, **missing**, and **not yet boot
 - https://bootc.dev/
 - https://www.freedesktop.org/software/systemd/man/latest/systemd.special.html
 - https://github.com/osbuild/image-builder
+
+## First-boot target and account preflight #1 — verified results
+
+GitHub Actions run: https://github.com/crelovia/crelovia-os/actions/runs/39880077844
+
+- Job succeeded; duration 5m17s.
+- The vendor `/usr/lib/systemd/system/default.target` symlink resolves to `graphical.target`. No `/etc/systemd/system/default.target` override was found. This is static configuration evidence, **not** a demonstrated boot.
+- `/etc/systemd/system/display-manager.service` resolves to the packaged `sddm.service`.
+- SDDM 0.21.0, `sddm-wayland-plasma` 6.7.5, Plasma Desktop, Plasma Workspace and KWin 6.7.5 are installed. The Wayland Plasma session file is present.
+- `accountsservice` is installed; `initial-setup`, `initial-setup-gui`, `gnome-initial-setup`, and the RPM named `systemd-firstboot` were not installed. A `systemd-firstboot.service` unit file exists; that is not evidence of a usable enrollment experience.
+- No interactive local user with UID 1000–65533 appeared in `/etc/passwd`. No passwords or shadow data were read.
+- Service enablement links exist for SSH, Avahi, ModemManager, firewalld and NetworkManager. Runtime exposure has not been tested; audit network listeners and firewall behavior in an isolated VM.
+- Bootc lint: 12 checks passed, 1 skipped, 2 warnings (`nonempty-run-tmp`, `var-tmpfiles`).
+
+### Decision
+Do **not** add another graphical default target, and do **not** embed a default user or password. Investigate a supported initial enrollment path (or test-only VM provisioning kept outside a distributed image) and validate its security before moving to a user-accessible image.
+
+A completed CI preflight is not proof of actual boot or login.
