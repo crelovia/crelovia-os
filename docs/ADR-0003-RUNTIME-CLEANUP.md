@@ -34,3 +34,15 @@ A working display manager, bootable qcow2 image, installer, account provisioning
 - Podman reports busy runtime mount paths including `/run/.containerenv` and `/run/systemd/resolve/stub-resolv.conf`. These files are actively supplied by the container runtime and must not be recursively removed.
 - Corrective experiment: replace blanket deletion with a narrow list of observed service-generated paths, `/run/cups`, `/run/hplip`, `/run/lock/lockdev`, and `/run/dnf`. This may not eliminate the whole lint warning, which is acceptable while learning the ownership model.
 - Neither this failed attempt nor its correction is proof of boot success or full filesystem cleanliness.
+
+## Runtime cleanup experiment #2 — build recovered, lint not yet clean
+
+- Run: https://github.com/crelovia/crelovia-os/actions/runs/39877362601
+- Status: success (4m30s); KDE desktop/workspace/KWin package checks passed.
+- Lint: **12 passed, 1 skipped, 2 warnings**, still `nonempty-run-tmp` and `var-tmpfiles`.
+- The narrowly scoped cleanup avoided the container runtime's bind mounts and removed previously reported entries, but did not eliminate all runtime state. Examples still reported: `/run/lock`, `/run/mariadb`, `/run/openvpn-client`, `/run/openvpn-server`, `/run/pluto`.
+- `/var` warnings remain; do not remove package-owned state blindly.
+
+### Strategy checkpoint
+
+Avoid an endless cycle of guessing `/run` paths. Next, review Fedora bootc's recommended build-time cleanup / systemd-tmpfiles approach and explicitly distinguish container-runtime mounts from image-layer files. Before shipping any bootable image, validate first-boot service initialization and capture diagnostics; a linter warning count alone is not a boot test.
