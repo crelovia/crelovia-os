@@ -64,3 +64,21 @@ Run: https://github.com/crelovia/crelovia-os/actions/runs/39873678620
 - No bootable disk image or graphical login has been demonstrated yet.
 
 **Next decision gate:** Inventory complete paths, ownership, and existing tmpfiles rules in a diagnostic workflow. Avoid broad deletions and do not suppress lint warnings merely to obtain a green status.
+
+## Read-only filesystem inventory #4 — 2026-10-22
+
+Run: https://github.com/crelovia/crelovia-os/actions/runs/39874739710
+
+- Workflow succeeded in 5m26s; lint still reports **12 passed, 1 skipped, 2 warnings**: `nonempty-run-tmp` and `var-tmpfiles`.
+- Package ownership samples via `rpm -qf`:
+  - `/var/account` → `psacct-6.6.4-25.fc43`
+  - `/var/cache/PackageKit` and `/var/cache/app-info` → `PackageKit-1.3.6-1.fc43`
+  - `/var/lib/plocate/CACHEDIR.TAG` → `plocate-1.1.25-2.fc43`
+  - `/var/lib/systemd/catalog/database` → `systemd-258.11-1.fc43`
+  - `/var/lib/authselect/checksum` → no owning package reported (generated state; behavior needs review)
+- Several systemd tmpfiles entries already exist, including CUPS, DNF, and HPLIP. Verify their scope against paths present in the build; existence alone does not clear bootc warnings.
+- **No path was deleted by this inventory diagnostic.** Never broadly remove package-owned state to silence lint.
+
+### Proposed next gate
+
+Review the upstream bootc guidance on `/var` initialization, identify package-generated build residue vs required runtime state, and test an explicit, narrowly scoped cleanup in a new disposable build. Keep the known-good KDE container unchanged. Require actual bootc lint evidence, followed by VM boot tests.
