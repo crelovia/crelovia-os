@@ -17,7 +17,7 @@ All plans are provisional. No release date is promised.
 - [ ] Pin and document reviewed upstream digests and reproducible build inputs
 - [ ] Boot the image in a disposable VM
 - [x] Build an experimental Fedora 43 bootc container containing KDE Plasma 6.7.5 and KWin (run 39869732108; packaging verified, not boot-tested)
-- [ ] Resolve KDE image bootc lint warnings for runtime/tmp files, DNF logs, and /var initialization
+- [ ] Resolve remaining KDE bootc warnings for runtime paths and /var initialization (see [ADR-0004](ADR-0004-BOOTC-STATE-INVESTIGATION.md); DNF log warning resolved)
 - [ ] Launch KDE Plasma with familiar desktop defaults
 - [ ] Verify basic networking, display, storage, audio, and updates
 - [ ] Document rollback/recovery design and prove it in a VM
