@@ -18,10 +18,11 @@ RUN dnf clean all && \
     rm -f /var/log/dnf5.log /var/log/dnf5.log.[0-9]* && \
     rm -rf /run/dnf
 
-# Build-time contents of /run and /tmp must not be baked into the booted OS.
-# Experimental cleanup scoped to ephemeral filesystem paths only.
-# Leave package-owned /var state unchanged until its initialization is understood.
-RUN find /run /tmp -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
+# Container runtimes bind-mount files under /run. Never blanket-delete /run or /tmp.
+# Limit this iteration to known service-created directories observed in lint logs.
+# More /run paths may remain; record them instead of masking lint warnings.
+# Leave package-owned /var state unchanged pending first-boot investigation.
+RUN rm -rf -- /run/cups /run/hplip /run/lock/lockdev /run/dnf
 
 # Check a few essential pieces without presuming which login manager Fedora supplies.
 RUN rpm -q plasma-desktop plasma-workspace kwin && \
