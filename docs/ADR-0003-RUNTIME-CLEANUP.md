@@ -26,3 +26,11 @@ The changes do not affect the original `build/Containerfile.desktop` or `build/C
 ## Not yet proven
 
 A working display manager, bootable qcow2 image, installer, account provisioning, user login, updates or rollback. Treat the experiment as a disposable CI container only.
+
+## First runtime-cleanup run — failed safely
+
+- Run: https://github.com/crelovia/crelovia-os/actions/runs/39876508292
+- Outcome: build failed at the broad `find /run /tmp ... rm -rf` step, **before** the package-validation/lint step.
+- Podman reports busy runtime mount paths including `/run/.containerenv` and `/run/systemd/resolve/stub-resolv.conf`. These files are actively supplied by the container runtime and must not be recursively removed.
+- Corrective experiment: replace blanket deletion with a narrow list of observed service-generated paths, `/run/cups`, `/run/hplip`, `/run/lock/lockdev`, and `/run/dnf`. This may not eliminate the whole lint warning, which is acceptable while learning the ownership model.
+- Neither this failed attempt nor its correction is proof of boot success or full filesystem cleanliness.
