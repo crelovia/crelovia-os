@@ -11,6 +11,7 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -27,4 +28,21 @@ jobs:
           grep -Fq 'RUN bootc container lint' build/Containerfile
           test -f SECURITY.md
           test -f docs/ARCHITECTURE.md
-          echo 'Crelovia source validation passed (static checks only).'
+          test -f docs/ROADMAP.md
+          test -f CONTRIBUTING.md
+          echo 'Crelovia source metadata check passed (static checks only).'
+      - name: Syntax-check shell diagnostics
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          scripts=(build/*.sh)
+          if (( ${#scripts[@]} == 0 )); then
+            echo 'No shell scripts found under build/'
+            exit 1
+          fi
+          for script in "${scripts[@]}"; do
+            echo "Checking $script"
+            bash -n "$script"
+          done
+          echo "Shell syntax checks passed: ${#scripts[@]} scripts."
