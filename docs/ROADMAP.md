@@ -8,7 +8,7 @@ All plans are provisional. No release date is promised.
 - [x] Document initial architecture and test strategy
 - [ ] Choose license(s) after dependency/legal review
 - [ ] Establish branch protection and minimum CI checks
-- [ ] Set up a controlled security-reporting channel
+- [x] Set up a controlled security-reporting channel (GitHub Private vulnerability reporting enabled, verified in maintainer settings screenshots on 2026-10-24; external reporter/notification flow still merits testing)
 - [ ] Validate name, domain, and trademark clearance
 
 ## Milestone 0.1: Bootable developer prototype
