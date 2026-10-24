@@ -39,12 +39,27 @@ Before requiring the job, confirm the latest `Validate source` run passes for th
 - [x] Private vulnerability reporting enabled in GitHub settings (2026-10-24 screenshots show **Disable** and repository settings saved; advisory creation page accessible to maintainer)
 - [ ] External/private reporting entry point verified
 - [ ] Maintainer security notifications configured
-- [ ] `main` rule enabled and tested
-- [ ] Required `validate` status green on a PR
-- [ ] Expected assistant contributions use feature-branch / PR workflow
+- [ ] `main` rule enabled and tested (positive and failing-CI PR behavior confirmed; direct-push/force-push/deletion restrictions not independently exercised)
+- [x] Required `validate` status green on a PR ([PR #1](https://github.com/crelovia/crelovia-os/pull/1), merged after one successful check)
+- [x] Expected assistant contributions use feature-branch / PR workflow ([PR #1](https://github.com/crelovia/crelovia-os/pull/1) created, validated and merged)
 
 Do not check these items without evidence. The remaining milestone tasks (license review and name/domain/trademark diligence) are independent.
 
 ## Pull request workflow smoke test — 2026-10-24
 
 This documentation-only change was prepared on `test/main-protection-pr-workflow` to verify the new `Protect Main` ruleset and the `validate` GitHub Actions requirement. This is a non-production test: confirm required checks on the PR before merging. Do not bypass branch rules to complete the test.
+
+## Required-check negative control — 2026-10-24
+
+- [PR #2](https://github.com/crelovia/crelovia-os/pull/2) used a disposable test branch with intentionally malformed Bash syntax in `build/ci-negative-control.sh`.
+- GitHub Actions `Validate source / validate (pull_request)` failed, was labeled **Required**, and the merge action was disabled. This is evidence that the configured required status check blocks ordinary merging on failure.
+- The deliberately broken file was subsequently deleted from the disposable branch, and the PR was closed **without merging**. Verified that `build/ci-negative-control.sh` does not exist on `main`.
+- No direct push, force push or branch deletion attempt against `main` was made. Those controls should be verified separately without compromising the branch.
+
+## Verified contribution workflow
+
+1. Branch from `main`.
+2. Commit focused changes to the feature branch.
+3. Open a PR against `main`.
+4. Require `validate` to pass; never bypass a failed check.
+5. Merge using GitHub's PR UI, then delete the feature branch.
