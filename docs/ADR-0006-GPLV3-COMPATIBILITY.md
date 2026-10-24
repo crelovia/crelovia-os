@@ -5,7 +5,7 @@ Status: **Proposed, pending component inventory, provenance check, and final lic
 
 ## Project preference
 
-The maintainer prefers **GNU GPL version 3** for original Crelovia OS source code so covered downstream distributed derivatives continue to provide their corresponding source. Decide **GPL-3.0-only** versus **GPL-3.0-or-later** explicitly before adding authoritative licensing headers or a root `LICENSE` file. The Free Software Foundation recommends **GPL-3.0-or-later** for most original programs; choosing that option permits future versions at the recipient's option, which is a substantive choice.
+The maintainer prefers **GNU GPL version 3** for original Crelovia OS source code so covered downstream distributed derivatives continue to provide their corresponding source. The maintainer **selected GPL-3.0-or-later on 2026-10-24** for original Crelovia code. That choice has not yet been implemented as a legal license grant in the repository. The Free Software Foundation recommends **GPL-3.0-or-later** for most original programs; choosing that option permits future versions at the recipient's option, which is a substantive choice.
 
 This ADR records *direction*, not a declaration that every existing repository file is now GPLv3.
 
@@ -34,7 +34,7 @@ The reviewed subset is **not** a full file-by-file or RPM inventory. An automate
 
 ## Distribution and attribution work
 
-1. Choose GPL-3.0-only vs GPL-3.0-or-later and the copyright holders/years for original Crelovia code.
+1. GPL-3.0-or-later selected for original code; confirm the copyright holders/years for individual files and approve exact license scope.
 2. Inventory all authored files and third-party snippets in the repo; mark provenance and exceptions. Do not assert copyright over content with uncertain ownership.
 3. Add an unmodified authoritative full GNU GPL text, per-file `SPDX-License-Identifier` plus copyright attribution where applicable, and a scope description distinguishing Crelovia code from dependencies and assets.
 4. Inventory `rpm -qa --qf '%{NAME}\t%{LICENSE}\n'` in the build and preserve upstream licensing obligations. This RPM query format may include legacy or non-SPDX strings; review manually rather than treating it as an automated compliance verdict.
@@ -55,4 +55,4 @@ The reviewed subset is **not** a full file-by-file or RPM inventory. An automate
 
 ## Decision gate
 
-**Do not yet add a blanket GPLv3 LICENSE file, alter OCI image license labels, or mark Milestone 0 license review complete.** Finalize version option, file authorship inventory and exceptions first. This is engineering planning, not legal advice.
+**Do not yet add a blanket GPLv3 LICENSE file, alter OCI image license labels, or mark Milestone 0 license review complete.** The version option is selected; finalize file authorship inventory, image package inventory and exceptions first. This is engineering planning, not legal advice.
