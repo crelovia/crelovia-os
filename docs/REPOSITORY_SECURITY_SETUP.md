@@ -1,6 +1,6 @@
 # Milestone 0 — Repository security setup
 
-Status: **configuration instructions prepared; settings not verified or enabled by automation**.
+Status: **private vulnerability reporting enabled and verified by repository maintainer on 2026-10-24**; branch protection and external reporter testing remain pending.
 
 This is a maintainer checklist for the public `crelovia/crelovia-os` repository. The GitHub connector can edit repository files but does not expose settings for branch rules or private vulnerability reporting. **Do not mark roadmap checks complete merely because this document exists.**
 
@@ -36,7 +36,7 @@ Before requiring the job, confirm the latest `Validate source` run passes for th
 
 ## Verification record (fill in when observed)
 
-- [ ] Private vulnerability reporting enabled in GitHub settings
+- [x] Private vulnerability reporting enabled in GitHub settings (2026-10-24 screenshots show **Disable** and repository settings saved; advisory creation page accessible to maintainer)
 - [ ] External/private reporting entry point verified
 - [ ] Maintainer security notifications configured
 - [ ] `main` rule enabled and tested
