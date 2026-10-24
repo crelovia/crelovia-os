@@ -79,3 +79,19 @@ Sources:
 - https://www.gnu.org/licenses/gpl-howto.html
 - https://creativecommons.org/licenses/by-sa/4.0/
 - https://www.copyright.gov/ai/
+
+## Maintainer knowledge statement — 2026-10-24
+
+In conversation, the maintainer stated: **"As far as I know, no. You created the majority of the docs lol"** in response to whether Crelovia code or documentation had been copied directly from other projects beyond standard commands, examples, and linked documentation.
+
+Interpretation: the maintainer is **not aware of direct copying of third-party project material**, and reports that most project documentation was generated with AI assistance. This is a **qualified statement of personal knowledge**, not a guarantee of originality, a complete similarity audit, proof of all copyright ownership, or a license grant. The text of this statement is recorded to preserve its uncertainty.
+
+### Implications for implementation
+
+- We can prepare the GPL-3.0-or-later and CC BY-SA 4.0 license *scope and notices* for material where contributors possess the relevant rights.
+- Do not mechanically attach personal copyright notices to every AI-generated passage. Authorship/protectability can vary by jurisdiction and the human creative contribution. The human maintainer's editorial selection, instructions and revisions should be described accurately rather than assumed sufficient for every work.
+- Treat third-party notices and licenses separately from the Crelovia-authored material. If later discovered, remove, replace, or correctly attribute externally derived content before distribution.
+- Complete a targeted snippet/source comparison and confirm copyright holder attribution before applying per-file SPDX lines to every existing file.
+- The maintainer's licensing preference is already recorded: **GPL-3.0-or-later for project-owned code and CC BY-SA 4.0 for project-owned standalone documentation**.
+
+This entry records maintainer feedback; it does not purport to execute a copyright assignment, license third-party material, or certify legal compliance.
