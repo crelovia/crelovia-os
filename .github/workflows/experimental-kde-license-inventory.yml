@@ -1,0 +1,39 @@
+name: Experimental KDE component license inventory
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install Podman
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y podman
+      - name: Build experimental KDE image
+        run: podman build -f build/Containerfile.desktop-cleanup -t localhost/crelovia-kde-license:dev .
+      - name: Inventory licenses (no image mutations)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p license-reports
+          podman create --name crelovia-license-report \
+            --mount "type=bind,src=${{ github.workspace }}/build/report-rpm-licenses.sh,dst=/usr/local/share/report-licenses.sh,ro" \
+            localhost/crelovia-kde-license:dev \
+            bash /usr/local/share/report-licenses.sh /tmp/crelovia-license-report
+          podman start -a crelovia-license-report
+          podman cp crelovia-license-report:/tmp/crelovia-license-report/. license-reports/
+          podman rm crelovia-license-report
+          test -s license-reports/rpm-licenses.tsv
+      - name: Upload RPM metadata report
+        uses: actions/upload-artifact@v4
+        with:
+          name: crelovia-kde-rpm-licenses
+          path: license-reports/
+          retention-days: 30
