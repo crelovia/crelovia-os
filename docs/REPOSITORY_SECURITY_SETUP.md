@@ -44,3 +44,7 @@ Before requiring the job, confirm the latest `Validate source` run passes for th
 - [ ] Expected assistant contributions use feature-branch / PR workflow
 
 Do not check these items without evidence. The remaining milestone tasks (license review and name/domain/trademark diligence) are independent.
+
+## Pull request workflow smoke test — 2026-10-24
+
+This documentation-only change was prepared on `test/main-protection-pr-workflow` to verify the new `Protect Main` ruleset and the `validate` GitHub Actions requirement. This is a non-production test: confirm required checks on the PR before merging. Do not bypass branch rules to complete the test.
