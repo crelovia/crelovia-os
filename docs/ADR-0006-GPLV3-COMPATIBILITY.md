@@ -56,3 +56,7 @@ The reviewed subset is **not** a full file-by-file or RPM inventory. An automate
 ## Decision gate
 
 **Do not yet add a blanket GPLv3 LICENSE file, alter OCI image license labels, or mark Milestone 0 license review complete.** The version option is selected; finalize file authorship inventory, image package inventory and exceptions first. This is engineering planning, not legal advice.
+
+## Documentation licensing scope — selected 2026-10-24
+
+The maintainer chose **CC BY-SA 4.0 for original standalone documentation** while retaining **GPL-3.0-or-later for original code**, pending authorship and file-level exceptions. Treat mixed-format files and embedded program examples separately. Upstream notices and trademarks remain independent. Do not apply the CC license to software components by blanket inheritance. This remains a planned licensing scheme, not a present license grant.

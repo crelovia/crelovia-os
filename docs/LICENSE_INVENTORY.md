@@ -30,7 +30,7 @@ No media, fonts, artwork or binary blobs were present among those *tracked repos
 ## Ownership decisions still needed
 
 1. Verify author/rights-holder and any copied snippets for each authored file using commit history and contributor confirmation. Do not assume a GitHub username alone conveys copyright ownership; AI-assisted code may require jurisdiction-specific assessment.
-2. Decide whether project documentation shares GPL-3.0-or-later or uses a separate documentation license; assets/marks must be scoped separately.
+2. Selected: CC BY-SA 4.0 for project-owned standalone documentation; identify mixed code/docs files and exceptions; assets/marks must be scoped separately.
 3. Document contributor inbound license expectations without inventing a CLA or copyright assignment.
 4. Review the actual Fedora KDE RPM metadata report and source distribution obligations before publishing any OS image.
 5. Add an authoritative GNU GPL-3.0 license text and scoped copyright/SPDX markers **in a later review PR**, never blanket relicense upstream packages.
@@ -46,8 +46,21 @@ The manually triggered `Experimental KDE component license inventory` workflow b
 - [x] Inspect existing file-level SPDX declarations (zero).
 - [ ] Verify ownership and third-party excerpts.
 - [ ] Execute and inspect Fedora/KDE package report.
-- [ ] Resolve documentation and asset licensing scope.
+- [ ] Documentation direction selected: CC BY-SA 4.0 for standalone original docs; mixed content and assets still need file-level review.
 - [ ] Verify copyright notices and full GPL text before implementation.
 - [ ] Review Fedora trademark/source supply duties before distributing images.
 
 See [ADR-0006](ADR-0006-GPLV3-COMPATIBILITY.md).
+
+## Documentation licensing decision — 2026-10-24
+
+The maintainer selected **CC BY-SA 4.0** for Crelovia-authored *standalone documentation* and **GPL-3.0-or-later** for Crelovia-authored source code. The choice is subject to verifying the right to grant each license and defining file-by-file scope.
+
+- Standalone explanatory Markdown (e.g. guides, project charter and ADRs), if originally authored and cleared, is intended for CC BY-SA 4.0.
+- Scripts, workflow YAML, Containerfiles and other executable/build configuration, if authored and cleared, are intended for GPL-3.0-or-later.
+- Markdown containing substantial executable code may require dual notices or separately licensed code samples. Don't automatically treat embedded code as licensed for copying into software merely because the prose is CC BY-SA.
+- Third-party quotations, logos, brands, screenshots, fonts, art, firmware and upstream package contents do **not** receive a new Crelovia license merely from proximity or repository inclusion.
+- CC BY-SA 4.0 requires attribution, license notice, indication of changes, and sharing adapted documentation under compatible terms when distributed. It does **not** stop commercial reuse.
+- Neither license direction has been implemented by adding authoritative license texts or copyright declarations. Document ownership, exceptions, and file classifications first.
+
+References: https://creativecommons.org/licenses/by-sa/4.0/ and https://www.gnu.org/licenses/gpl-3.0.html
