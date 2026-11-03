@@ -6,8 +6,8 @@ All plans are provisional. No release date is promised.
 - [x] Create public GitHub organization and repository
 - [x] Document mission and scope
 - [x] Document initial architecture and test strategy
-- [ ] Choose license(s) after dependency/legal review
-- [ ] Establish branch protection and minimum CI checks
+- [x] Choose license(s) after preliminary dependency/legal review (GPL-3.0-or-later for original code; CC BY-SA 4.0 for original standalone docs; see [LICENSE.md](../LICENSE.md); per-file provenance and full image redistribution review remain release gates)
+- [x] Establish branch protection and minimum CI checks ([PR #1](https://github.com/crelovia/crelovia-os/pull/1) validated and merged; [PR #2](https://github.com/crelovia/crelovia-os/pull/2) required-check failure blocked merging; direct-push/force-push restrictions not independently tested)
 - [x] Set up a controlled security-reporting channel (GitHub Private vulnerability reporting enabled, verified in maintainer settings screenshots on 2026-10-24; external reporter/notification flow still merits testing)
 - [ ] Validate name, domain, and trademark clearance
 
