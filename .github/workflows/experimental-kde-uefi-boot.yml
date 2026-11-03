@@ -1,0 +1,159 @@
+# Manually dispatched, experimental unattended UEFI boot smoke test.
+# Does NOT provision a login account, publish a disk, or prove KDE works.
+name: Experimental KDE UEFI boot smoke
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: crelovia-kde-uefi-smoke
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 105
+    steps:
+      - name: Checkout protected source
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Inspect throwaway runner resources
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(uname -m)" = x86_64
+          df -h .
+          free -h
+          if (( $(df -Pk . | awk 'NR==2 {print $4}') < 10 * 1024 * 1024 )); then
+            echo '::error::Insufficient free disk for experiment; refusing cleanup of unrelated paths.'
+            exit 1
+          fi
+
+      - name: Install Podman, QCOW2 and UEFI emulation tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y podman qemu-system-x86 qemu-utils ovmf socat python3-pil
+          podman --version
+          qemu-system-x86_64 --version
+          qemu-img --version
+
+      - name: Build the existing KDE image in rootful Podman
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo podman build --file build/Containerfile.desktop-cleanup --tag localhost/crelovia-kde-uefi:dev .
+          sudo podman image inspect localhost/crelovia-kde-uefi:dev --format 'KDE source OCI image ID: {{.Id}}'
+          df -h .
+
+      - name: Convert bootc container to throwaway QCOW2
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p output
+          builder=ghcr.io/osbuild/image-builder-cli:latest
+          sudo podman pull "$builder"
+          sudo podman image inspect "$builder" --format 'image-builder OCI image ID: {{.Id}}'
+          sudo podman run --rm "$builder" version
+          sudo podman run --rm --privileged \
+            --volume "$PWD/output:/output" \
+            --volume /var/lib/containers/storage:/var/lib/containers/storage \
+            "$builder" build \
+            --bootc-ref localhost/crelovia-kde-uefi:dev \
+            --bootc-default-fs ext4 qcow2
+          image_path=$(sudo find output -type f -name '*.qcow2' -print -quit)
+          test -n "$image_path"
+          sudo qemu-img info --output=json "$image_path" > qcow2-info.json
+          jq -e '.format == "qcow2" and (."virtual-size" > 0)' qcow2-info.json
+          echo "DISK_PATH=$image_path" >> "$GITHUB_ENV"
+
+      - name: Boot headless UEFI guest and capture unattended display
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p evidence
+          # Prefer Ubuntu's 4 MB OVMF pair and fall back to the legacy matching pair.
+          if [[ -f /usr/share/OVMF/OVMF_CODE_4M.fd && -f /usr/share/OVMF/OVMF_VARS_4M.fd ]]; then
+            code=/usr/share/OVMF/OVMF_CODE_4M.fd
+            vars=/usr/share/OVMF/OVMF_VARS_4M.fd
+          elif [[ -f /usr/share/OVMF/OVMF_CODE.fd && -f /usr/share/OVMF/OVMF_VARS.fd ]]; then
+            code=/usr/share/OVMF/OVMF_CODE.fd
+            vars=/usr/share/OVMF/OVMF_VARS.fd
+          else
+            echo '::error::No matching OVMF firmware code/vars pair found.'
+            exit 1
+          fi
+          cp "$vars" evidence/OVMF_VARS.fd
+          # The VM sees only the generated QCOW2 and its private, temporary UEFI vars.
+          # -nic none means no network device; no host folders or interactive credentials.
+          # TCG works even if /dev/kvm isn't exposed by the hosted runner.
+          sudo timeout --signal=TERM --kill-after=8s 370s qemu-system-x86_64 \
+            -machine q35,accel=tcg -cpu max -smp 2 -m 4096 \
+            -drive if=pflash,format=raw,unit=0,readonly=on,file="$code" \
+            -drive if=pflash,format=raw,unit=1,file="$PWD/evidence/OVMF_VARS.fd" \
+            -drive if=virtio,format=qcow2,file="$DISK_PATH",cache=none \
+            -nic none -display none -vga std \
+            -monitor unix:"$PWD/evidence/monitor.sock",server=on,wait=off \
+            -serial file:"$PWD/evidence/serial.log" \
+            -no-reboot &
+          vm_pid=$!
+          for delay in 120 180; do
+            sleep "$delay"
+            if [[ -S evidence/monitor.sock ]]; then
+              frame="evidence/frame-$delay.ppm"
+              printf 'screendump %s\r\n' "$PWD/$frame" | sudo socat -t 8 - UNIX-CONNECT:"$PWD/evidence/monitor.sock" || true
+              if sudo test -s "$frame"; then
+                sudo python3 - "$frame" <<'PY'
+          import sys
+          from PIL import Image
+          path = sys.argv[1]
+          with Image.open(path) as img:
+              img.save(path.replace(".ppm", ".png"))
+          PY
+                sudo rm -f "$frame"
+              fi
+            fi
+          done
+          # Stop disposable guest even when it has not finished booting.
+          sudo pkill -TERM -f '^qemu-system-x86_64 -machine q35,accel=tcg' || true
+          wait "$vm_pid" || true
+          echo 'UEFI guest boot attempt finished; interpreting the screens requires human review.'
+          sudo ls -lh evidence/*.png evidence/serial.log 2>/dev/null || true
+          if ! sudo find evidence -maxdepth 1 -type f -name 'frame-*.png' | grep -q .; then
+            echo '::error::No graphical frame captured. Inspect conversion/firmware/monitor logs.'
+            exit 1
+          fi
+
+      - name: Record interpretation boundary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo '## Crelovia UEFI first-boot smoke experiment'
+            echo '- Container build and QCOW2 conversion: refer to steps above'
+            echo '- QEMU UEFI startup: launched if prior steps succeeded'
+            echo '- Frame captures: review artifact manually; a frame alone is NOT proof Linux booted'
+            echo '- SDDM, KDE, working login, networking, SELinux and rollback: **NOT VERIFIED**'
+            echo '- No guest NIC, host disk passthrough, embedded users/passwords or published disk image'
+            echo '- KVM deliberately unused; software emulation may not reach Linux within test window'
+            echo '- Fedora and converter image inputs: floating; not release reproducible'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload short-lived screenshots and serial evidence only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: crelovia-uefi-boot-smoke-evidence
+          path: |
+            evidence/frame-*.png
+            evidence/serial.log
+            qcow2-info.json
+          if-no-files-found: warn
+          retention-days: 3
+          compression-level: 6
