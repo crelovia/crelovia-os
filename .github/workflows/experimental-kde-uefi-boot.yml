@@ -52,6 +52,26 @@ jobs:
           sudo podman image inspect localhost/crelovia-kde-uefi:dev --format 'KDE source OCI image ID: {{.Id}}'
           df -h .
 
+      - name: Inspect SDDM and display configuration before conversion (read-only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Static checks in the unbooted OCI image. Do not read shadow,
+          # private credentials or user home directories.
+          sudo podman run --rm localhost/crelovia-kde-uefi:dev bash -c '
+            set -eu
+            echo "=== Installed graphical packages ==="
+            rpm -q sddm sddm-wayland-plasma plasma-workspace kwin || true
+            echo "=== Effective boot/display manager symlinks ==="
+            ls -l /etc/systemd/system/default.target /usr/lib/systemd/system/default.target /etc/systemd/system/display-manager.service /usr/lib/systemd/system/sddm.service 2>&1 || true
+            echo "=== SDDM unit dependencies / commands ==="
+            sed -n "1,140p" /usr/lib/systemd/system/sddm.service 2>&1 || true
+            echo "=== Available session and display files ==="
+            ls -l /usr/share/wayland-sessions /usr/share/xsessions /usr/libexec/sddm* 2>&1 || true
+            echo "=== Relevant graphics packages ==="
+            rpm -qa | grep -Ei "^(mesa|libdrm|xorg-x11-server|qt6|sddm)" | sort | head -70 || true
+          '
+
       - name: Convert bootc container to throwaway QCOW2
         shell: bash
         run: |
@@ -103,9 +123,20 @@ jobs:
             -serial file:"$PWD/evidence/serial.log" \
             -no-reboot &
           vm_pid=$!
-          for delay in 120 180; do
-            sleep "$delay"
+          last_delay=0
+          for delay in 60 120 180 240 300; do
+            sleep "$((delay - last_delay))"
+            last_delay=$delay
             if [[ -S evidence/monitor.sock ]]; then
+              # QEMU monitor evidence describes the emulated VGA device and guest state;
+              # it does not prove a guest display manager launched.
+              {
+                echo "===== T+$delay seconds ====="
+                for query in 'info status' 'info vga' 'info block'; do
+                  echo ">>> $query"
+                  printf '%s\r\n' "$query" | sudo socat -t 8 - UNIX-CONNECT:"$PWD/evidence/monitor.sock" || true
+                done
+              } >> evidence/qemu-monitor-info.txt 2>&1
               frame="evidence/frame-$delay.ppm"
               printf 'screendump %s\r\n' "$PWD/$frame" | sudo socat -t 8 - UNIX-CONNECT:"$PWD/evidence/monitor.sock" || true
               if sudo test -s "$frame"; then
@@ -124,6 +155,7 @@ jobs:
           sudo pkill -TERM -f '^qemu-system-x86_64 -machine q35,accel=tcg' || true
           wait "$vm_pid" || true
           echo 'UEFI guest boot attempt finished; interpreting the screens requires human review.'
+          echo 'Static SDDM checks and QEMU VGA state are evidence, not a login proof.'
           sudo ls -lh evidence/*.png evidence/serial.log 2>/dev/null || true
           if ! sudo find evidence -maxdepth 1 -type f -name 'frame-*.png' | grep -q .; then
             echo '::error::No graphical frame captured. Inspect conversion/firmware/monitor logs.'
@@ -138,7 +170,7 @@ jobs:
             echo '## Crelovia UEFI first-boot smoke experiment'
             echo '- Container build and QCOW2 conversion: refer to steps above'
             echo '- QEMU UEFI startup: launched if prior steps succeeded'
-            echo '- Frame captures: review artifact manually; a frame alone is NOT proof Linux booted'
+            echo '- Capture frames at 60, 120, 180, 240 and 300 seconds, plus QEMU monitor VGA/status snapshots; inspect manually'
             echo '- SDDM, KDE, working login, networking, SELinux and rollback: **NOT VERIFIED**'
             echo '- No guest NIC, host disk passthrough, embedded users/passwords or published disk image'
             echo '- KVM deliberately unused; software emulation may not reach Linux within test window'
@@ -153,6 +185,7 @@ jobs:
           path: |
             evidence/frame-*.png
             evidence/serial.log
+            evidence/qemu-monitor-info.txt
             qcow2-info.json
           if-no-files-found: warn
           retention-days: 3
