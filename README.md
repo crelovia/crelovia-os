@@ -53,6 +53,6 @@ We welcome thoughtful discussion, testing, documentation, accessibility feedback
 
 ## License and brand status
 
-A license for original Crelovia code has not been selected; the upstream components will retain their applicable licenses. The repository being public does **not** automatically authorize redistribution of its original contents. We will settle licensing before accepting substantial source contributions.
+Original Crelovia code and build configuration are licensed under **GPL-3.0-or-later**, while original standalone Crelovia documentation is licensed under **CC BY-SA 4.0**, to the extent the project has rights to license that material. See [Licensing scope](LICENSE.md) and the full texts in [`LICENSES/`](LICENSES/). Fedora, KDE and all other upstream components retain their own licenses and redistribution obligations. File-level attribution and provenance review remain ongoing.
 
 The Crelovia name is also pending formal brand and domain checks.
