@@ -19,4 +19,4 @@ Thanks for your interest! Crelovia is an early-stage project. Documentation, res
 Be welcoming and constructive. Harassment, threats, doxxing, hate speech, and disclosure of private information are not acceptable. A formal reporting and escalation process will be established before broader community recruitment. Do not send private reports to a public issue.
 
 ## Licensing note
-A license for original Crelovia files has not yet been selected. Until then, public visibility does not imply permission for reuse beyond applicable law. Please discuss substantial code contributions before submitting them.
+Crelovia's original project code and build configuration use **GPL-3.0-or-later**; original standalone documentation uses **CC BY-SA 4.0**. See [LICENSE.md](LICENSE.md) for scope and third-party exceptions. By contributing, ensure you have authority to submit your work under the relevant project license; retain required third-party notices, flag externally derived snippets and document AI-assisted material when relevant. No CLA or copyright assignment has been adopted.
