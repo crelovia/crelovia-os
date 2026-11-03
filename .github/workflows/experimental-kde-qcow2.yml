@@ -1,0 +1,96 @@
+# Manual experimental conversion only. This does NOT boot a VM or distribute an image.
+name: Experimental KDE QCOW2 conversion
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: crelovia-qcow2-conversion
+  cancel-in-progress: false
+
+jobs:
+  convert:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 110
+    steps:
+      - name: Checkout experimental source
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Check isolated runner and disk budget
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(uname -m)" = x86_64
+          df -h .
+          echo 'GitHub-hosted ephemeral runner; no host Windows disk passthrough.'
+          # Fedora KDE bootc + loopback conversion can exceed a standard hosted runner.
+          # Fail explicitly rather than silently deleting arbitrary runner paths.
+          available_kib=$(df -Pk . | awk 'NR==2 {print $4}')
+          if (( available_kib < 10 * 1024 * 1024 )); then
+            echo "::error::Less than 10 GiB free before build; larger disposable runner needed."
+            exit 1
+          fi
+
+      - name: Install converter prerequisites
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y podman qemu-utils
+          podman --version
+          qemu-img --version
+
+      - name: Build unmodified KDE experimental container in rootful store
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo podman build --file build/Containerfile.desktop-cleanup --tag localhost/crelovia-kde-conversion:dev .
+          sudo podman image inspect localhost/crelovia-kde-conversion:dev --format 'OCI source image ID: {{.Id}}'
+          sudo podman images localhost/crelovia-kde-conversion:dev
+          df -h .
+
+      - name: Convert to disposable QCOW2 using unified image-builder
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p output
+          builder=ghcr.io/osbuild/image-builder-cli:latest
+          # Floating tool tag is permitted only for this exploratory job;
+          # inspect version/digest and pin before reproducible releases.
+          sudo podman pull "$builder"
+          sudo podman image inspect "$builder" --format 'Builder image ID: {{.Id}}'
+          sudo podman run --rm "$builder" version
+          # Privileged filesystem conversion is confined to this throwaway Linux runner.
+          # No secrets, test users, default passwords, host shares or upload steps.
+          sudo podman run --rm --privileged \
+            --volume "$PWD/output:/output" \
+            --volume /var/lib/containers/storage:/var/lib/containers/storage \
+            "$builder" build \
+            --bootc-ref localhost/crelovia-kde-conversion:dev \
+            --bootc-default-fs ext4 \
+            qcow2
+
+      - name: Validate QCOW2 header without booting or uploading
+        shell: bash
+        run: |
+          set -euo pipefail
+          image_path=$(sudo find output -type f -name '*.qcow2' -print -quit)
+          if [[ -z "$image_path" ]]; then
+            echo '::error::No QCOW2 artifact produced'
+            exit 1
+          fi
+          sudo qemu-img info --output=json "$image_path" | tee qcow2-info.json
+          jq -e '.format == "qcow2" and (."virtual-size" > 0)' qcow2-info.json >/dev/null
+          {
+            echo '## Crelovia KDE QCOW2 conversion (experimental)'
+            echo '- Image builder conversion: **completed**'
+            echo '- QCOW2 header and virtual size: **validated**'
+            echo '- VM boot, SDDM, login and KDE: **NOT TESTED**'
+            echo '- Disk artifact: **not uploaded or published**'
+            echo '- Upstream inputs/tool tags: **not yet digest pinned**'
+          } >> "$GITHUB_STEP_SUMMARY"
