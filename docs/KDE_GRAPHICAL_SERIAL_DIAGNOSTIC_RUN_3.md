@@ -47,3 +47,15 @@ The existing known-good container recipe, original first-boot workflow and Linux
 - If a derived systemd unit fails to enable or the conversion reports bootc/SELinux issues, record the full error and repair the **diagnostic branch** without mutating the known-good baseline.
 
 **Success criterion:** enough runtime evidence to choose a single narrow graphical startup fix, **not** a confirmed KDE session.
+
+## Run 3 evidence review and instrumentation correction — 2026-11-04
+
+A reviewer inspected the uploaded Run 3 ZIP (`crelovia-graphical-serial-evidence (1).zip`) including five captured frames, serial output and QEMU monitor data.
+
+**Observed:** the diagnostic service emitted its START marker and **only PHASE 1** before the VM's capture window ended. That first sample reported `graphical.target`, `display-manager.service` and `sddm.service` as **inactive**, with `Result=success` for SDDM; no SDDM failure was demonstrated. The system logged bochs DRM/framebuffer initialization and reached `fedora login:` on the serial console. Later display captures were black; no greeter was verified.
+
+**Instrumentation flaw:** the diagnostic unit was installed as a dependency of `multi-user.target`, with `Type=oneshot` and three delayed sampling intervals. systemd considers a `oneshot` start pending until the script exits. This can block completion of `multi-user.target` and consequently delay `graphical.target` and SDDM; the probe itself therefore contaminated the measurement.
+
+**Correction in the follow-up PR:** change only the disposable diagnostic unit to `Type=simple` so systemd considers it started immediately, allowing boot-target progression while the sampling script runs. No changes to the KDE baseline, release image, usernames, networking, or image-builder configuration. The correction is **not yet boot-verified**.
+
+**Next run interpretation:** Verify PHASE 1/2/3 markers; compare `graphical.target` and SDDM status across samples and screenshot timestamps. If `graphical.target` still does not activate after the probe is non-blocking, collect its dependency jobs and SDDM journal before changing graphical packages.
