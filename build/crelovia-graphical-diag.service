@@ -1,0 +1,21 @@
+# Never include this diagnostic-only unit in a public/production image.
+[Unit]
+Description=Crelovia experimental graphical boot serial diagnostics
+Documentation=https://github.com/crelovia/crelovia-os
+After=systemd-journald.service
+ConditionPathExists=/dev/ttyS0
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/usr/local/libexec/crelovia-diag-graphical-serial.sh
+TimeoutStartSec=220
+StandardInput=null
+StandardOutput=journal
+StandardError=journal
+NoNewPrivileges=yes
+ProtectHome=yes
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target

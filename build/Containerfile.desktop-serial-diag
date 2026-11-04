@@ -1,0 +1,13 @@
+# DIAGNOSTIC-ONLY DERIVED IMAGE. NEVER DISTRIBUTE OR SHIP THIS VARIANT.
+# Build *after* build/Containerfile.desktop-cleanup as localhost/crelovia-kde-uefi:dev.
+# Preserves the original image by deriving a separate tagged container.
+FROM localhost/crelovia-kde-uefi:dev
+
+COPY build/diag-graphical-serial.sh /usr/local/libexec/crelovia-diag-graphical-serial.sh
+COPY build/crelovia-graphical-diag.service /usr/lib/systemd/system/crelovia-graphical-diag.service
+RUN chmod 0755 /usr/local/libexec/crelovia-diag-graphical-serial.sh && \
+    mkdir -p /etc/systemd/system/multi-user.target.wants && \
+    ln -s /usr/lib/systemd/system/crelovia-graphical-diag.service \
+      /etc/systemd/system/multi-user.target.wants/crelovia-graphical-diag.service
+
+LABEL org.opencontainers.image.description="UNRELEASED, TEMPORARY serial-only graphical diagnostics image"
