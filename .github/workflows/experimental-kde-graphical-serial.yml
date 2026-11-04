@@ -29,6 +29,13 @@ jobs:
           test "$(uname -m)" = x86_64
           df -h .
           free -h
+          echo "=== Acceleration capability probe (no mode change in this experiment) ==="
+          if [[ -c /dev/kvm && -r /dev/kvm && -w /dev/kvm ]]; then
+            echo "KVM device accessible to job user; consider separate accelerated-VM experiment after review."
+          else
+            echo "KVM device inaccessible; retain known software-emulation path."
+          fi
+          ls -l /dev/kvm 2>&1 || true
           if (( $(df -Pk . | awk 'NR==2 {print $4}') < 10 * 1024 * 1024 )); then
             echo '::error::Insufficient free disk for experiment; refusing cleanup of unrelated paths.'
             exit 1
@@ -126,7 +133,7 @@ jobs:
           # The VM sees only the generated QCOW2 and its private, temporary UEFI vars.
           # -nic none means no network device; no host folders or interactive credentials.
           # TCG works even if /dev/kvm isn't exposed by the hosted runner.
-          sudo timeout --signal=TERM --kill-after=8s 370s qemu-system-x86_64 \
+          sudo timeout --signal=TERM --kill-after=8s 780s qemu-system-x86_64 \
             -machine q35,accel=tcg -cpu max -smp 2 -m 4096 \
             -drive if=pflash,format=raw,unit=0,readonly=on,file="$code" \
             -drive if=pflash,format=raw,unit=1,file="$PWD/evidence/OVMF_VARS.fd" \
@@ -137,7 +144,7 @@ jobs:
             -no-reboot &
           vm_pid=$!
           last_delay=0
-          for delay in 60 120 180 240 300; do
+          for delay in 60 120 180 300 450 600; do
             sleep "$((delay - last_delay))"
             last_delay=$delay
             if [[ -S evidence/monitor.sock ]]; then
@@ -145,7 +152,7 @@ jobs:
               # it does not prove a guest display manager launched.
               {
                 echo "===== T+$delay seconds ====="
-                for query in 'info status' 'info vga' 'info block'; do
+                for query in 'info status' 'info block'; do
                   echo ">>> $query"
                   printf '%s\r\n' "$query" | sudo socat -t 8 - UNIX-CONNECT:"$PWD/evidence/monitor.sock" || true
                 done
@@ -165,6 +172,7 @@ jobs:
             fi
           done
           # Stop disposable guest even when it has not finished booting.
+          # Terminate only the QEMU instance launched by this disposable job.
           sudo pkill -TERM -f '^qemu-system-x86_64 -machine q35,accel=tcg' || true
           wait "$vm_pid" || true
           echo 'UEFI guest boot attempt finished; interpreting the screens requires human review.'
@@ -183,11 +191,11 @@ jobs:
             echo '## Crelovia experimental graphical serial diagnostics'
             echo '- Container build and QCOW2 conversion: refer to steps above'
             echo '- QEMU UEFI startup: launched if prior steps succeeded'
-            echo '- Capture frames at 60, 120, 180, 240 and 300 seconds, plus QEMU monitor VGA/status snapshots; inspect manually'
+            echo '- Capture frames at 60, 120, 180, 300, 450 and 600 seconds, plus QEMU monitor status/block snapshots; inspect manually'
             echo '- Diagnostic service writes scoped journal snapshots to serial if it starts'
             echo '- SDDM, KDE, working login, networking, SELinux and rollback: **NOT VERIFIED**'
             echo '- No guest NIC, host disk passthrough, embedded users/passwords or published disk image'
-            echo '- KVM deliberately unused; software emulation may not reach Linux within test window'
+            echo '- KVM availability probed but not used; TCG software emulation retained to isolate timing effects'
             echo '- Fedora and converter image inputs: floating; not release reproducible'
           } >> "$GITHUB_STEP_SUMMARY"
 
