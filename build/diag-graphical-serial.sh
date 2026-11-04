@@ -11,9 +11,9 @@ export SYSTEMD_COLORS=0
 printf '\n=== CRELOVIA GRAPHICS DIAGNOSTICS START ===\n'
 for phase in 1 2 3; do
   case "$phase" in
-    1) sleep 20 ;;
-    2) sleep 60 ;;
-    3) sleep 60 ;;
+    1) sleep 10 ;;
+    2) sleep 45 ;;
+    3) sleep 90 ;;
   esac
   printf '\n=== DIAGNOSTIC PHASE %s ===\n' "$phase"
   printf '%s\n' 'Default target:'
@@ -25,6 +25,12 @@ for phase in 1 2 3; do
       -p LoadState -p ActiveState -p SubState -p Result \
       -p ExecMainCode -p ExecMainStatus --no-pager 2>&1 || true
   done
+  printf '%s\n' 'Systemd pending jobs (selected, bounded output):'
+  timeout 12s systemctl list-jobs --no-pager --no-legend 2>&1 | head -35 || true
+  printf '%s\n' 'Startup ordering chain for graphical.target (bounded):'
+  timeout 12s systemd-analyze critical-chain graphical.target --no-pager 2>&1 | head -60 || true
+  printf '%s\n' 'Failed system units (bounded):'
+  timeout 12s systemctl --failed --no-pager --plain 2>&1 | head -35 || true
   printf '%s\n' 'SDDM and Plymouth journal excerpts (last 50):'
   journalctl -b --no-pager -o short-monotonic -n 50 \
     -u sddm.service -u display-manager.service \
