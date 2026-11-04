@@ -4,6 +4,15 @@ name: Experimental KDE KVM-accelerated first light
 
 on:
   workflow_dispatch:
+    inputs:
+      runner_label:
+        description: "Choose standard 14-GB runner or a preconfigured trusted larger ephemeral runner"
+        type: choice
+        required: true
+        default: ubuntu-24.04
+        options:
+          - ubuntu-24.04
+          - crelovia-kvm-large
 
 permissions:
   contents: read
@@ -14,7 +23,7 @@ concurrency:
 
 jobs:
   smoke:
-    runs-on: ubuntu-24.04
+    runs-on: ${{ inputs.runner_label }}
     timeout-minutes: 105
     steps:
       - name: Checkout protected source
@@ -27,8 +36,10 @@ jobs:
         run: |
           set -euo pipefail
           test "$(uname -m)" = x86_64
-          df -h .
+          df -h . / /var 2>/dev/null || true
           free -h
+          echo 'Selected runner label: ${{ inputs.runner_label }}'
+          echo 'A 14-GB standard runner is expected to fail the conservative storage gate.'
           echo "=== Acceleration capability probe (no mode change in this experiment) ==="
           if [[ -c /dev/kvm && -r /dev/kvm && -w /dev/kvm ]]; then
             echo "KVM device accessible to job user; consider separate accelerated-VM experiment after review."
@@ -36,8 +47,15 @@ jobs:
             echo "KVM device inaccessible; retain known software-emulation path."
           fi
           ls -l /dev/kvm 2>&1 || true
-          if (( $(df -Pk . | awk 'NR==2 {print $4}') < 10 * 1024 * 1024 )); then
-            echo '::error::Insufficient free disk for experiment; refusing cleanup of unrelated paths.'
+          # Fedora KDE image builds may require >14 GiB available during layer commits.
+          # A conservative 22-GiB initial budget avoids consuming the standard runner's
+          # entire root filesystem. The threshold is a guard, NOT a measured peak.
+          free_kib=$(df -Pk / | awk 'NR==2 {print $4}')
+          echo "Free root storage: $((free_kib / 1024)) MiB"
+          if (( free_kib < 22 * 1024 * 1024 )); then
+            echo '::error::DISK_BUDGET_UNAVAILABLE: need >=22 GiB free on the root filesystem before image build.'
+            echo 'Standard ubuntu-24.04 GitHub runners have 14 GB total SSD.'
+            echo 'Use a separately configured, trusted ephemeral larger runner (crelovia-kvm-large), only after explicit billing review.'
             exit 1
           fi
 
@@ -50,6 +68,19 @@ jobs:
           podman --version
           qemu-system-x86_64 --version
           qemu-img --version
+
+      - name: Recheck disk budget after installing QEMU and Podman
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Rootful Podman stores images here. Confirm its backing device is large enough.
+          sudo mkdir -p /var/lib/containers/storage
+          df -h /var/lib/containers/storage .
+          free_kib=$(df -Pk /var/lib/containers/storage | awk 'NR==2 {print $4}')
+          if (( free_kib < 20 * 1024 * 1024 )); then
+            echo '::error::DISK_BUDGET_UNAVAILABLE: <20 GiB free after prerequisite installation.'
+            exit 1
+          fi
 
       - name: Require functioning KVM before any image build
         shell: bash
@@ -93,7 +124,7 @@ jobs:
           set -euo pipefail
           sudo podman build --file build/Containerfile.desktop-cleanup --tag localhost/crelovia-kde-uefi:dev .
           sudo podman image inspect localhost/crelovia-kde-uefi:dev --format 'KDE source OCI image ID: {{.Id}}'
-          df -h .
+          df -h /var/lib/containers/storage .
 
       - name: Derive disposable serial diagnostic image without changing baseline
         shell: bash
@@ -137,6 +168,7 @@ jobs:
           sudo podman pull "$builder"
           sudo podman image inspect "$builder" --format 'image-builder OCI image ID: {{.Id}}'
           sudo podman run --rm "$builder" version
+          df -h /var/lib/containers/storage .
           sudo podman run --rm --privileged \
             --volume "$PWD/output:/output" \
             --volume /var/lib/containers/storage:/var/lib/containers/storage \
