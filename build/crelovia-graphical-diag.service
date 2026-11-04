@@ -6,10 +6,10 @@ After=systemd-journald.service
 ConditionPathExists=/dev/ttyS0
 
 [Service]
-Type=oneshot
+Type=simple
 User=root
 ExecStart=/usr/local/libexec/crelovia-diag-graphical-serial.sh
-TimeoutStartSec=220
+TimeoutStopSec=15
 StandardInput=null
 StandardOutput=journal
 StandardError=journal
